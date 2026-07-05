@@ -1,10 +1,7 @@
-import sys
 import sqlite3
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from config import DB_PATH
+from src.config import DB_PATH
 
 class GestorDB:
     @staticmethod
