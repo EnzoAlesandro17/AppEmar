@@ -2,7 +2,14 @@ import hashlib
 import os
 import sqlite3
 
-from src.constants.validations import validar_dni, validar_email, validar_fecha, validar_mayor_edad, validar_telefono
+from src.constants.validations import (
+    validar_campos_obligatorios,
+    validar_dni,
+    validar_email,
+    validar_fecha,
+    validar_mayor_edad,
+    validar_telefono,
+)
 from src.db.connection import obtener_conexion
 from src.exceptions import ValidationError
 from src.modules.user.db import TABLA
@@ -24,12 +31,7 @@ def _verificar_hash(contrasena, contrasena_guardada):
 
 
 def _validar_datos(name, last_name, dni, username, password, email, birth_date, phone):
-    if not name or not name.strip():
-        raise ValidationError("El nombre es obligatorio.")
-    if not last_name or not last_name.strip():
-        raise ValidationError("El apellido es obligatorio.")
-    if not dni or not dni.strip():
-        raise ValidationError("El DNI es obligatorio.")
+    validar_campos_obligatorios({"name": name, "last_name": last_name, "dni": dni})
     validar_dni(dni)
 
     if bool(username) != bool(password):

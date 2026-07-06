@@ -61,3 +61,26 @@ def validar_mayor_edad(fecha_nacimiento, edad_minima=18):
     )
     if edad < edad_minima:
         raise ValidationError(f"La persona debe ser mayor de {edad_minima} años.")
+
+
+def validar_campos_obligatorios(campos):
+    """Recibe {nombre_campo: valor} y lanza ValidationError con el primero vacío."""
+    for campo, valor in campos.items():
+        if not valor or not str(valor).strip():
+            raise ValidationError(f"Falta {campo}")
+
+
+def limpiar_documento(valor):
+    return valor.replace("-", "").replace(" ", "")
+
+
+def validar_documento(dni_cuit):
+    """Detecta si es DNI (7-8 dígitos) o CUIT (11 dígitos), valida y devuelve el valor normalizado."""
+    limpio = limpiar_documento(dni_cuit)
+    if len(limpio) in (7, 8):
+        validar_dni(limpio)
+    elif len(limpio) == 11:
+        validar_cuit(limpio)
+    else:
+        raise ValidationError("El documento debe tener 7-8 dígitos (DNI) u 11 dígitos (CUIT).")
+    return limpio
