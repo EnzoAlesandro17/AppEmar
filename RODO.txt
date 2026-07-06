@@ -1,0 +1,100 @@
+RODO - notas personales sobre AppEmar
+=====================================
+(esto es un readme mío, para mí. No es documentación oficial del proyecto)
+
+
+QUÉ HICIMOS
+-----------
+- Migramos el main.py viejo (Tkinter + Excel/xlwings, la "CAJA") a una
+  arquitectura modular: cada área (users, clients, products, branches) tiene
+  su propio db.py / logic.py / ui.py, todos compartiendo la misma DB SQLite.
+- Conexión centralizada en src/db/connection.py (GestorDB.conectar() +
+  obtener_conexion() como context manager, con foreign_keys ON).
+- Esquema de las 4 tablas, todas con columna status (1 = activo, 0 = borrado
+  lógico) para no perder datos con un DELETE real.
+- CRUD completo + validaciones de negocio en los 4 módulos, con las
+  validaciones genéricas (email, teléfono, DNI, CUIT, fecha/edad mínima,
+  campos obligatorios) centralizadas en src/constants/validations.py para
+  no duplicarlas módulo por módulo.
+- Contraseñas de usuario hasheadas con pbkdf2_hmac + salt (nunca texto plano).
+- products: precio mayorista/minorista con validación cruzada, y stock que
+  puede ser NULL para productos sin inventario físico (ej: E-SIM).
+- main.py ahora crea las tablas solo al arrancar (inicializar_db) y muestra
+  un sidebar con los 4 módulos (por ahora con UI placeholder, "en
+  construcción").
+- De paso resolvimos cosas del entorno: tkinter roto en el sandbox de VS Code
+  Flatpak, tamaño de ventana (900x500), requirements.txt corrupto en UTF-16
+  con dependencias viejas de Excel, y código muerto en config.py.
+
+
+QUÉ SEGUIRÍA HACIENDO
+----------------------
+- Las UI reales de cada módulo (hoy son un Label "en construcción"): formularios
+  conectados a crear_/actualizar_/listar_ de cada logic.py.
+- Pantalla de login usando user.logic.verificar_contrasena().
+- Un módulo de ventas/movimientos que relacione clients + products + users +
+  branches. Hoy las 4 tablas son independientes entre sí, sin foreign keys
+  reales unas con otras (branch_id, client_id, etc.) — eso va a hacer falta
+  en cuanto haya que registrar una venta.
+- Tests automatizados (pytest) en vez de los scripts sueltos que fui corriendo
+  a mano en cada paso para probar cada módulo. Esos tests no quedaron guardados
+  en ningún lado del repo.
+- Migraciones de esquema reales (ALTER TABLE) para cuando ya haya datos
+  cargados en producción y haya que sumar columnas sin perder información
+  (hoy resolvemos esto borrando la DB de desarrollo, que no sirve una vez
+  que el sistema esté en uso real).
+- Empaquetar la app para Windows (PyInstaller o similar), ya que el uso final
+  es en la compu del local.
+- Conectar las excepciones ValidationError de logic.py con messagebox en la UI
+  (hoy existen pero ninguna pantalla las está mostrando todavía).
+
+
+CONSEJOS (para vos, che)
+------------------------
+- Antes de que el proyecto crezca más, probá escribir de cero un logic.py
+  nuevo (o un módulo chico) replicando el patrón ya armado, sin ayuda. Vas a
+  fijar mejor los conceptos que si solo los leés.
+- Cuando conectes la UI real, probá primero a mano (como hicimos acá con
+  scripts) antes de cablearlo todo a botones — así separás "¿la lógica anda?"
+  de "¿la interfaz anda?".
+- Guardate en algún lado (acá mismo o en la cabeza) las decisiones de diseño
+  que fuimos tomando juntos: por qué status en vez de DELETE, por qué DNI/CUIT
+  autodetectado, por qué stock NULL para E-SIM. Si volvés a este código en 3
+  meses te vas a agradecer el contexto.
+- No tengas miedo de pedir que algo se centralice/refactorice apenas notes
+  que se repite (como hiciste con las validaciones) — es mucho más barato
+  hacerlo ahora, con 4 módulos, que dentro de un año con 10.
+
+
+COSAS BUENAS
+------------
+- La decisión de separar en db/logic/ui desde el arranque fue sólida — hizo
+  que cada módulo nuevo (branches, en particular) fuera calcar el patrón
+  anterior en vez de inventar de nuevo.
+- Fuiste vos quien pidió centralizar las validaciones compartidas en vez de
+  dejarlas duplicadas — ese es exactamente el tipo de intervención que
+  mantiene el código escalable a medida que se agregan módulos.
+- Pensaste en casos borde reales del negocio antes de que se conviertan en
+  bugs (E-SIM sin stock, DNI vs CUIT, precio mayorista/minorista) en vez de
+  descubrirlos después con datos reales cargados.
+
+
+COSAS A MEJORAR
+----------------
+- Cero tests automatizados por ahora. Todo lo que probamos fue a mano, en la
+  conversación — nada de eso se vuelve a ejecutar solo si cambiás algo.
+- Las tablas viven aisladas unas de otras (sin FK reales entre ellas todavía).
+- El manejo de errores en pantalla (messagebox) todavía no existe: las
+  ValidationError están listas pero no las está atrapando ninguna UI.
+- README.md sigue vacío — en algún momento conviene, aunque sea 4 líneas,
+  para cuando otra persona (o vos en 6 meses) abra el repo de cero.
+
+
+ALGO EXTRA
+----------
+Ya que es para un local Claro: capaz en algún momento el sistema crezca más
+allá de "clientes/productos/usuarios" — por ejemplo, si en algún momento
+querés trackear altas de línea o portabilidades, no solo venta de equipos.
+No hace falta armar nada de esto ahora, pero si lo tenés en mente desde ya
+te va a evitar tener que rehacer el esquema de las tablas de cero el día que
+lo necesites.

@@ -3,6 +3,7 @@ import tkinter as tk
 from src.constants.settings import Settings
 from src.constants.styles import Colors, Fonts
 from src.modules.branches.db import crear_tabla as crear_tabla_branches
+from src.modules.branches.ui import SucursalesFrame
 from src.modules.clients.db import crear_tabla as crear_tabla_clients
 from src.modules.clients.ui import ClientesFrame
 from src.modules.products.db import crear_tabla as crear_tabla_products
@@ -30,6 +31,7 @@ class App(tk.Tk):
         "Clientes": ClientesFrame,
         "Productos": ProductosFrame,
         "Usuarios": UsuariosFrame,
+        "Sucursales": SucursalesFrame,
     }
 
     def __init__(self):
