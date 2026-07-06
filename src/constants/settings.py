@@ -3,9 +3,9 @@ class Settings:
     VERSION = "1.0.0"
     
     # Geometría de Tkinter
-    WINDOW_SIZE = "1024x768"
-    MIN_WIDTH = 800
-    MIN_HEIGHT = 600
+    WINDOW_SIZE = "900x500"
+    MIN_WIDTH = 700
+    MIN_HEIGHT = 450
     
     # Otras configuraciones lógicas
     TIMEOUT_SECONDS = 30

@@ -1,20 +1,22 @@
 from src.db.connection import obtener_conexion
 
-TABLA = "clients"
+TABLA = "branches"
 
 
 def crear_tabla():
-    """Crea la tabla de clientes si no existe todavía."""
+    """Crea la tabla de sucursales si no existe todavía."""
     with obtener_conexion() as conexion:
         conexion.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {TABLA} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT UNIQUE,
                 name TEXT NOT NULL,
-                last_name TEXT NOT NULL,
-                dni_cuit TEXT NOT NULL UNIQUE,
-                phone TEXT,
-                email TEXT
+                country TEXT,
+                city TEXT,
+                address TEXT,
+                email TEXT,
+                phone TEXT
             )
             """
         )
