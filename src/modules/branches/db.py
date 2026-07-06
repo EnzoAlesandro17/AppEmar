@@ -16,7 +16,8 @@ def crear_tabla():
                 city TEXT,
                 address TEXT,
                 email TEXT,
-                phone TEXT
+                phone TEXT,
+                status INTEGER NOT NULL DEFAULT 1
             )
             """
         )

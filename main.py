@@ -2,9 +2,21 @@ import tkinter as tk
 
 from src.constants.settings import Settings
 from src.constants.styles import Colors, Fonts
+from src.modules.branches.db import crear_tabla as crear_tabla_branches
+from src.modules.clients.db import crear_tabla as crear_tabla_clients
 from src.modules.clients.ui import ClientesFrame
+from src.modules.products.db import crear_tabla as crear_tabla_products
 from src.modules.products.ui import ProductosFrame
+from src.modules.user.db import crear_tabla as crear_tabla_users
 from src.modules.user.ui import UsuariosFrame
+
+
+def inicializar_db():
+    """Crea todas las tablas del proyecto si todavía no existen."""
+    crear_tabla_users()
+    crear_tabla_clients()
+    crear_tabla_products()
+    crear_tabla_branches()
 
 
 class App(tk.Tk):
@@ -69,5 +81,6 @@ class App(tk.Tk):
 
 
 if __name__ == "__main__":
+    inicializar_db()
     app = App()
     app.mainloop()

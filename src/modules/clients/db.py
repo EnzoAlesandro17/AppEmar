@@ -14,7 +14,8 @@ def crear_tabla():
                 last_name TEXT NOT NULL,
                 dni_cuit TEXT NOT NULL UNIQUE,
                 phone TEXT,
-                email TEXT
+                email TEXT,
+                status INTEGER NOT NULL DEFAULT 1
             )
             """
         )

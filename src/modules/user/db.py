@@ -18,7 +18,8 @@ def crear_tabla():
                 password TEXT,
                 email TEXT,
                 birth_date TEXT,
-                phone TEXT
+                phone TEXT,
+                status INTEGER NOT NULL DEFAULT 1
             )
             """
         )
