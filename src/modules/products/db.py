@@ -16,6 +16,8 @@ def crear_tabla():
                 brand TEXT NOT NULL,
                 description TEXT NOT NULL,
                 stock INTEGER NOT NULL,
+                wholesale_price REAL NOT NULL,
+                retail_price REAL NOT NULL,
                 status INTEGER NOT NULL DEFAULT 1
             )
             """
