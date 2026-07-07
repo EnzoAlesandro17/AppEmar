@@ -12,11 +12,12 @@ from src.constants.validations import (
 )
 from src.db.connection import obtener_conexion
 from src.exceptions import ValidationError
+from src.modules.branches.logic import obtener_por_id as obtener_sucursal_por_id
 from src.modules.user.db import TABLA
 
 _ITERACIONES_HASH = 100_000
 
-ROLES = ("Admin", "Supervisor", "Vendedor", "Invitado")
+ROLES = ("Admin", "Supervisor", "Vendedor")
 
 
 def _hashear_contrasena(contrasena):
@@ -32,18 +33,28 @@ def _verificar_hash(contrasena, contrasena_guardada):
     return hash_bytes.hex() == hash_hex
 
 
-def _validar_datos(name, last_name, dni, username, password, email, birth_date, phone, role):
+def _validar_branch_id(branch_id):
+    if branch_id is None:
+        return
+    sucursal = obtener_sucursal_por_id(branch_id)
+    if sucursal is None or sucursal["status"] == 0:
+        raise ValidationError("La sucursal indicada no existe.")
+
+
+def _validar_datos(name, last_name, dni, username, password, email, birth_date, phone, role, branch_id):
     validar_campos_obligatorios({"name": name, "last_name": last_name, "dni": dni})
     validar_dni(dni)
 
     if role not in ROLES:
         raise ValidationError(f"El rol debe ser uno de: {', '.join(ROLES)}.")
 
-    if role == "Invitado":
+    if role == "Vendedor":
         if password:
-            raise ValidationError("Los invitados no usan contraseña: entran solo con su usuario.")
+            raise ValidationError("Los vendedores no usan contraseña: entran solo con su usuario.")
     elif bool(username) != bool(password):
         raise ValidationError("Usuario y contraseña deben cargarse juntos, o dejarse los dos vacíos.")
+
+    _validar_branch_id(branch_id)
 
     if email:
         validar_email(email)
@@ -69,10 +80,10 @@ def _traducir_error_integridad(error):
 
 
 def crear_usuario(name, last_name, dni, code=None, username=None, password=None,
-                   email=None, birth_date=None, phone=None, role="Vendedor"):
+                   email=None, birth_date=None, phone=None, role="Vendedor", branch_id=None):
     """Valida y crea un usuario nuevo. Devuelve el id generado."""
     telefono_normalizado = _validar_datos(
-        name, last_name, dni, username, password, email, birth_date, phone, role
+        name, last_name, dni, username, password, email, birth_date, phone, role, branch_id
     )
 
     contrasena_hasheada = _hashear_contrasena(password) if password else None
@@ -82,11 +93,11 @@ def crear_usuario(name, last_name, dni, code=None, username=None, password=None,
             cursor = conexion.execute(
                 f"""
                 INSERT INTO {TABLA}
-                    (code, name, last_name, dni, username, password, email, birth_date, phone, role)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (code, name, last_name, dni, username, password, email, birth_date, phone, role, branch_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (code, name, last_name, dni, username, contrasena_hasheada, email, birth_date,
-                 telefono_normalizado, role),
+                 telefono_normalizado, role, branch_id),
             )
             conexion.commit()
             return cursor.lastrowid
@@ -118,8 +129,12 @@ def listar_usuarios(incluir_borrados=False):
 
 def actualizar_usuario(id_usuario, name=None, last_name=None, dni=None, code=None,
                         username=None, password=None, email=None, birth_date=None, phone=None,
-                        role=None):
-    """Actualiza los campos recibidos; los que se pasan en None mantienen su valor actual."""
+                        role=None, branch_id=None, quitar_branch_id=False):
+    """Actualiza los campos recibidos; los que se pasan en None mantienen su valor actual.
+
+    branch_id=None mantiene la sucursal actual; para desasignarla explícitamente
+    pasar quitar_branch_id=True.
+    """
     usuario_actual = obtener_por_id(id_usuario)
     if usuario_actual is None:
         raise ValidationError("El usuario no existe.")
@@ -134,12 +149,16 @@ def actualizar_usuario(id_usuario, name=None, last_name=None, dni=None, code=Non
         "birth_date": birth_date if birth_date is not None else usuario_actual["birth_date"],
         "phone": phone if phone is not None else usuario_actual["phone"],
         "role": role if role is not None else usuario_actual["role"],
+        "branch_id": None if quitar_branch_id else (
+            branch_id if branch_id is not None else usuario_actual["branch_id"]
+        ),
     }
     password_efectivo = password if password is not None else usuario_actual["password"]
 
     telefono_normalizado = _validar_datos(
         nuevos["name"], nuevos["last_name"], nuevos["dni"], nuevos["username"],
         password_efectivo, nuevos["email"], nuevos["birth_date"], nuevos["phone"], nuevos["role"],
+        nuevos["branch_id"],
     )
 
     contrasena_hasheada = _hashear_contrasena(password) if password else usuario_actual["password"]
@@ -150,13 +169,14 @@ def actualizar_usuario(id_usuario, name=None, last_name=None, dni=None, code=Non
                 f"""
                 UPDATE {TABLA}
                 SET code = ?, name = ?, last_name = ?, dni = ?, username = ?,
-                    password = ?, email = ?, birth_date = ?, phone = ?, role = ?
+                    password = ?, email = ?, birth_date = ?, phone = ?, role = ?, branch_id = ?
                 WHERE id = ?
                 """,
                 (
                     nuevos["code"], nuevos["name"], nuevos["last_name"], nuevos["dni"],
                     nuevos["username"], contrasena_hasheada, nuevos["email"],
-                    nuevos["birth_date"], telefono_normalizado, nuevos["role"], id_usuario,
+                    nuevos["birth_date"], telefono_normalizado, nuevos["role"], nuevos["branch_id"],
+                    id_usuario,
                 ),
             )
             conexion.commit()
@@ -189,7 +209,7 @@ def verificar_contrasena(username, password):
 def iniciar_sesion(username, password):
     """Valida credenciales de login. Devuelve la fila del usuario si son correctas.
 
-    Los Invitado entran solo con su usuario, sin contraseña.
+    Los Vendedor entran solo con su usuario, sin contraseña.
     Mensaje de error genérico a propósito, para no filtrar si falló el
     usuario o la contraseña.
     """
@@ -197,7 +217,7 @@ def iniciar_sesion(username, password):
     if usuario is None or usuario["status"] == 0:
         raise ValidationError("Usuario o contraseña incorrectos.")
 
-    if usuario["role"] == "Invitado":
+    if usuario["role"] == "Vendedor":
         return usuario
 
     if usuario["password"] is None or not _verificar_hash(password, usuario["password"]):

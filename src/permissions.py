@@ -8,20 +8,23 @@ def puede_gestionar_usuarios(role):
 
 
 def puede_cambiar_alguna_password(role):
-    """True si ese rol puede cambiar la contrasena de alguien (aunque sea la propia)."""
-    return role != "Invitado"
+    """True si ese rol puede cambiar la contrasena de alguien (aunque sea la propia).
+
+    Vendedor no usa password (entra solo con su usuario), asi que no hay
+    nada que cambiar ni como actor ni como objetivo.
+    """
+    return role != "Vendedor"
 
 
 def puede_cambiar_password(actor_role, target_role, es_uno_mismo):
-    """Jerarquia: Admin > Supervisor > Vendedor > Invitado.
+    """Jerarquia: Admin > Supervisor. Vendedor no tiene password.
 
-    - Admin cambia la de cualquiera.
+    - Admin cambia la de cualquiera (Admin o Supervisor).
     - Supervisor cambia la de cualquiera menos Admin.
-    - Vendedor solo cambia la de otros Vendedores.
-    - Invitado no cambia ninguna (ni la propia: entra sin password).
-    - Cualquiera (menos Invitado) puede cambiar la propia.
+    - Vendedor no tiene password: ni la cambia ni se la cambian.
+    - Cualquiera (menos Vendedor) puede cambiar la propia.
     """
-    if actor_role == "Invitado":
+    if actor_role == "Vendedor" or target_role == "Vendedor":
         return False
     if es_uno_mismo:
         return True
@@ -29,6 +32,4 @@ def puede_cambiar_password(actor_role, target_role, es_uno_mismo):
         return True
     if actor_role == "Supervisor":
         return target_role != "Admin"
-    if actor_role == "Vendedor":
-        return target_role == "Vendedor"
     return False

@@ -20,8 +20,14 @@ def crear_tabla():
                 birth_date TEXT,
                 phone TEXT,
                 role TEXT NOT NULL DEFAULT 'Vendedor',
+                branch_id INTEGER REFERENCES branches(id),
                 status INTEGER NOT NULL DEFAULT 1
             )
             """
         )
+
+        columnas = [fila["name"] for fila in conexion.execute(f"PRAGMA table_info({TABLA})")]
+        if "branch_id" not in columnas:
+            conexion.execute(f"ALTER TABLE {TABLA} ADD COLUMN branch_id INTEGER REFERENCES branches(id)")
+
         conexion.commit()

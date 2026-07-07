@@ -3,6 +3,7 @@ from tkinter import messagebox, ttk
 
 from src import session
 from src.constants.styles import Colors, Fonts
+from src.modules.branches.logic import listar_sucursales
 from src.modules.user.logic import borrar_usuario, listar_usuarios, obtener_por_id
 from src.modules.user.password_dialog import CambiarContrasenaDialog
 from src.modules.user.user_form_dialog import UsuarioFormDialog
@@ -12,7 +13,7 @@ from src.permissions import (
     puede_gestionar_usuarios,
 )
 
-_COLUMNAS = ("code", "name", "last_name", "dni", "username", "role")
+_COLUMNAS = ("code", "name", "last_name", "dni", "username", "role", "branch")
 _ENCABEZADOS = {
     "code": "Código",
     "name": "Nombre",
@@ -20,6 +21,7 @@ _ENCABEZADOS = {
     "dni": "DNI",
     "username": "Usuario",
     "role": "Rol",
+    "branch": "Sucursal",
 }
 
 
@@ -130,6 +132,8 @@ class UsuariosFrame(tk.Frame):
             self._tree.delete(item)
         self._usuarios_por_item = {}
 
+        nombres_sucursal = {s["id"]: s["name"] for s in listar_sucursales()}
+
         for usuario in listar_usuarios():
             item = self._tree.insert(
                 "",
@@ -141,6 +145,7 @@ class UsuariosFrame(tk.Frame):
                     usuario["dni"],
                     usuario["username"] or "",
                     usuario["role"],
+                    nombres_sucursal.get(usuario["branch_id"], ""),
                 ),
             )
             self._usuarios_por_item[item] = usuario["id"]

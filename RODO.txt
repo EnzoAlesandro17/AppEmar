@@ -74,33 +74,72 @@ QUÉ HICIMOS
   puede tener password guardada — se valida en crear_usuario). La
   jerarquía completa vive en src/permissions.py
   (puede_cambiar_password).
+- (Update 2) El rol Invitado se eliminó del todo: Vendedor pasó a ser el
+  rol que entra sin contraseña (crear_usuario rechaza setearle una,
+  iniciar_sesion no la verifica). ROLES quedó en Admin/Supervisor/
+  Vendedor. La idea a futuro es que Admin/Supervisor puedan ir ganando
+  permisos que un Vendedor solo (sin login fuerte) no tenga.
+- users gana branch_id (FK a branches, nullable — Admin/Supervisor
+  pueden no tener sucursal asignada). Primera migración de esquema real
+  con ALTER TABLE ADD COLUMN en vez de borrar la DB de dev, porque ya
+  hay datos de prueba cargados a mano que valía la pena conservar.
+  Validado en user/logic.py (la sucursal tiene que existir y estar
+  activa). UsuarioFormDialog suma un combobox de sucursal, y el Treeview
+  de Usuarios muestra el nombre de la sucursal de cada uno.
+- branches deja de ser un placeholder: SucursalesFrame ahora es un
+  Treeview de solo lectura (sin botones de alta/edición/baja — por
+  ahora nadie edita sucursales desde la app).
 
 
 QUÉ SEGUIRÍA HACIENDO
 ----------------------
-- Las UI reales de clients/products/branches (hoy siguen siendo un Label "en
+- Las UI reales de clients/products (hoy siguen siendo un Label "en
   construcción") — calcar el patrón de Usuarios (Treeview + diálogos
-  separados de alta/edición) que ya quedó armado y probado.
+  separados de alta/edición) que ya quedó armado y probado. branches ya
+  tiene su Treeview, aunque de solo lectura.
 - Reactivar usuarios borrados desde la UI (reactivar_usuario ya existe en
   logic.py, pero todavía no hay botón que lo use).
 - Si en algún momento hace falta, restringir acceso a módulos por role (hoy
   el rol se guarda y se muestra pero no bloquea nada del sidebar).
 - Un módulo de ventas/movimientos que relacione clients + products + users +
-  branches. Hoy las 4 tablas son independientes entre sí, sin foreign keys
-  reales unas con otras (branch_id, client_id, etc.) — eso va a hacer falta
-  en cuanto haya que registrar una venta.
+  branches. users ya tiene branch_id; falta el resto (client_id en una
+  venta, etc.) y la tabla de movimientos en sí — eso va a hacer falta en
+  cuanto haya que registrar una venta.
 - Tests automatizados (pytest) en vez de los scripts sueltos que fui corriendo
   a mano en cada paso para probar cada módulo. Esos tests no quedaron guardados
   en ningún lado del repo.
-- Migraciones de esquema reales (ALTER TABLE) para cuando ya haya datos
-  cargados en producción y haya que sumar columnas sin perder información
-  (hoy resolvemos esto borrando la DB de desarrollo, que no sirve una vez
-  que el sistema esté en uso real).
+- Migraciones de esquema reales (ALTER TABLE): ya arrancamos con esto para
+  branch_id en users (ver arriba). Falta el resto: hacer que sea la
+  costumbre para cualquier columna nueva de acá en más, en vez de borrar
+  la DB de dev.
 - Empaquetar la app para Windows (PyInstaller o similar), ya que el uso final
   es en la compu del local.
 - Conectar ValidationError con messagebox en el resto de las pantallas (el
-  login ya lo hace, pero las UI de clients/products/branches/users siguen
-  siendo placeholders sin ningún manejo de errores todavía).
+  login y Usuarios ya lo hacen, pero clients/products siguen siendo
+  placeholders sin ningún manejo de errores todavía).
+
+
+VISIÓN A FUTURO (todavía sin diseñar, solo para no perder la idea)
+-------------------------------------------------------------------
+- Sucursales acotadas: cada usuario pertenece a una sola sucursal y
+  responde en nombre de ella — no debería poder declarar una venta a
+  nombre de otra sucursal.
+- Transferencias entre sucursales: sí se puede "mandar" efectivo o
+  producto a otra sucursal, pero no modificarla directamente. Esto es,
+  en esencia, un movimiento con origen/destino — va a salir naturalmente
+  del futuro módulo de ventas/movimientos, no conviene diseñarlo antes
+  y por separado.
+- Mensajería entre sucursales tipo "archivos cifrados": una sucursal (o
+  RR.HH. en general) manda un pedido de actualización o un asiento a
+  otra — ej. RR.HH. mandando una corrección de listas, o un Supervisor
+  mandando una conciliación o la aprobación de un asiento con
+  descuentos. Es una idea grande (workflow de aprobación + algo de
+  cifrado) que conviene diseñar junto con el módulo de ventas/
+  movimientos, cuando llegue el momento.
+- Posible 2FA (TOTP con pyotp) para el login de Admin/Supervisor más
+  adelante — técnicamente simple, la fricción real es operativa (cada
+  usuario necesita un authenticator y un plan para cuando pierda el
+  dispositivo). No condiciona el diseño de roles/sucursales de ahora.
 
 
 

@@ -3,7 +3,10 @@ from tkinter import messagebox, ttk
 
 from src.constants.styles import Colors, Fonts
 from src.exceptions import ValidationError
+from src.modules.branches.logic import listar_sucursales
 from src.modules.user.logic import ROLES, actualizar_usuario, crear_usuario
+
+_SIN_SUCURSAL = "(sin sucursal)"
 
 
 class UsuarioFormDialog(tk.Toplevel):
@@ -61,6 +64,25 @@ class UsuarioFormDialog(tk.Toplevel):
         self._combo_role.grid(row=fila, column=1, padx=5, pady=5)
         fila += 1
 
+        self._sucursales = listar_sucursales()
+        tk.Label(
+            contenedor, text="Sucursal", font=Fonts.BODY, bg=Colors.BG_MAIN, fg=Colors.TEXT_DARK
+        ).grid(row=fila, column=0, sticky="e", padx=5, pady=5)
+        self._combo_branch = ttk.Combobox(
+            contenedor,
+            values=[_SIN_SUCURSAL] + [s["name"] for s in self._sucursales],
+            state="readonly",
+            font=Fonts.BODY,
+        )
+        nombre_sucursal_actual = _SIN_SUCURSAL
+        if self._es_edicion and usuario["branch_id"] is not None:
+            sucursal_actual = next((s for s in self._sucursales if s["id"] == usuario["branch_id"]), None)
+            if sucursal_actual is not None:
+                nombre_sucursal_actual = sucursal_actual["name"]
+        self._combo_branch.set(nombre_sucursal_actual)
+        self._combo_branch.grid(row=fila, column=1, padx=5, pady=5)
+        fila += 1
+
         tk.Button(
             contenedor,
             text="Guardar",
@@ -74,7 +96,15 @@ class UsuarioFormDialog(tk.Toplevel):
     def _valor(self, clave):
         return self._entries[clave].get().strip() or None
 
+    def _branch_id_seleccionado(self):
+        nombre = self._combo_branch.get()
+        if nombre == _SIN_SUCURSAL:
+            return None
+        sucursal = next((s for s in self._sucursales if s["name"] == nombre), None)
+        return sucursal["id"] if sucursal is not None else None
+
     def _guardar(self):
+        branch_id = self._branch_id_seleccionado()
         try:
             if self._es_edicion:
                 actualizar_usuario(
@@ -88,6 +118,8 @@ class UsuarioFormDialog(tk.Toplevel):
                     birth_date=self._valor("birth_date"),
                     phone=self._valor("phone"),
                     role=self._combo_role.get(),
+                    branch_id=branch_id,
+                    quitar_branch_id=branch_id is None,
                 )
             else:
                 crear_usuario(
@@ -101,6 +133,7 @@ class UsuarioFormDialog(tk.Toplevel):
                     birth_date=self._valor("birth_date"),
                     phone=self._valor("phone"),
                     role=self._combo_role.get(),
+                    branch_id=branch_id,
                 )
         except ValidationError as error:
             messagebox.showerror("Error de validación", str(error))

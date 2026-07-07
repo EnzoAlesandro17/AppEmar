@@ -16,10 +16,10 @@ from src.modules.user.ui import UsuariosFrame
 
 def inicializar_db():
     """Crea todas las tablas del proyecto si todavía no existen."""
+    crear_tabla_branches()
     crear_tabla_users()
     crear_tabla_clients()
     crear_tabla_products()
-    crear_tabla_branches()
 
 
 class App(tk.Tk):
