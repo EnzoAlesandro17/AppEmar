@@ -25,13 +25,47 @@ QUÉ HICIMOS
 - De paso resolvimos cosas del entorno: tkinter roto en el sandbox de VS Code
   Flatpak, tamaño de ventana (900x500), requirements.txt corrupto en UTF-16
   con dependencias viejas de Excel, y código muerto en config.py.
+- (Update) El encoding de requirements.txt en realidad seguía en UTF-16LE
+  pese a lo anotado arriba (rompía pip install -r requirements.txt con
+  UnicodeDecodeError) — ahora sí quedó en UTF-8 de verdad, verificado
+  corriendo pip install.
+- users gana columna role (Admin / Gerente / Vendedor / Invitado),
+  validada en crear_/actualizar_usuario. Por ahora el rol se guarda y se
+  muestra, no restringe todavía qué módulos ve cada uno.
+- Login real: pantalla LoginFrame (src/modules/user/login_ui.py) usando
+  iniciar_sesion() (nueva, con mensaje de error genérico para no filtrar
+  si falló el usuario o la contraseña), conectada por primera vez a un
+  messagebox de error — hasta ahora ninguna pantalla atrapaba
+  ValidationError. Se bloquea el formulario a los MAX_LOGIN_ATTEMPTS (3)
+  intentos fallidos, constante que ya estaba definida y sin usar.
+  main.py arranca en el login en vez del sidebar directo.
+- src/session.py: módulo chico que guarda el usuario logueado en memoria
+  para que cualquier pantalla futura lo pueda consultar sin pasarlo a
+  mano por todos los frames.
+- Primera UI de CRUD real del proyecto: el módulo Usuarios dejó de ser un
+  placeholder. Treeview con la lista, y diálogos separados para
+  alta/edición (UsuarioFormDialog, con combobox de rol) y cambio de
+  contraseña (CambiarContrasenaDialog). Va a servir de molde para cuando
+  se hagan las UI de clients/products/branches.
+- src/permissions.py: primer lugar centralizado para reglas de "qué rol
+  puede hacer qué" (puede_gestionar_usuarios, puede_cambiar_contrasenas),
+  mismo espíritu que validations.py — se arma la primera vez que hace
+  falta, no cuando ya se repitió en varios módulos.
+- Reglas de permisos de Usuarios acordadas: crear/eliminar/editar datos
+  solo Admin y Gerente; cambiar contraseña (de cualquier usuario) también
+  lo puede hacer un Vendedor; Invitado ve la lista en solo lectura sin
+  ningún botón.
 
 
 QUÉ SEGUIRÍA HACIENDO
 ----------------------
-- Las UI reales de cada módulo (hoy son un Label "en construcción"): formularios
-  conectados a crear_/actualizar_/listar_ de cada logic.py.
-- Pantalla de login usando user.logic.verificar_contrasena().
+- Las UI reales de clients/products/branches (hoy siguen siendo un Label "en
+  construcción") — calcar el patrón de Usuarios (Treeview + diálogos
+  separados de alta/edición) que ya quedó armado y probado.
+- Reactivar usuarios borrados desde la UI (reactivar_usuario ya existe en
+  logic.py, pero todavía no hay botón que lo use).
+- Si en algún momento hace falta, restringir acceso a módulos por role (hoy
+  el rol se guarda y se muestra pero no bloquea nada del sidebar).
 - Un módulo de ventas/movimientos que relacione clients + products + users +
   branches. Hoy las 4 tablas son independientes entre sí, sin foreign keys
   reales unas con otras (branch_id, client_id, etc.) — eso va a hacer falta
@@ -45,8 +79,9 @@ QUÉ SEGUIRÍA HACIENDO
   que el sistema esté en uso real).
 - Empaquetar la app para Windows (PyInstaller o similar), ya que el uso final
   es en la compu del local.
-- Conectar las excepciones ValidationError de logic.py con messagebox en la UI
-  (hoy existen pero ninguna pantalla las está mostrando todavía).
+- Conectar ValidationError con messagebox en el resto de las pantallas (el
+  login ya lo hace, pero las UI de clients/products/branches/users siguen
+  siendo placeholders sin ningún manejo de errores todavía).
 
 
 CONSEJOS (para vos, che)
@@ -84,8 +119,8 @@ COSAS A MEJORAR
 - Cero tests automatizados por ahora. Todo lo que probamos fue a mano, en la
   conversación — nada de eso se vuelve a ejecutar solo si cambiás algo.
 - Las tablas viven aisladas unas de otras (sin FK reales entre ellas todavía).
-- El manejo de errores en pantalla (messagebox) todavía no existe: las
-  ValidationError están listas pero no las está atrapando ninguna UI.
+- El manejo de errores en pantalla (messagebox) ya cubre login y Usuarios;
+  falta todavía en clients/products/branches, que siguen siendo placeholders.
 - README.md sigue vacío — en algún momento conviene, aunque sea 4 líneas,
   para cuando otra persona (o vos en 6 meses) abra el repo de cero.
 
