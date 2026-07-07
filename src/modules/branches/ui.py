@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from src.constants.styles import Colors, Fonts
+from src.constants.styles import Colors, Fonts, Sizes
 from src.modules.branches.logic import listar_sucursales
 
 _COLUMNAS = ("code", "name", "country", "city", "address", "phone")
@@ -28,13 +28,45 @@ class SucursalesFrame(tk.Frame):
             self, text="Sucursales", font=Fonts.SUBTITLE, bg=Colors.BG_MAIN, fg=Colors.TEXT_DARK
         ).pack(anchor="w", padx=10, pady=10)
 
-        # Fila reservada en el mismo lugar fijo que van a ocupar los botones
-        # de acción en Usuarios, para el día que Sucursales tenga alta/edición.
-        # Se empaqueta ANTES que el Treeview (que se expande) para que su
+        # Botones de acción en el mismo lugar fijo que Usuarios, pero
+        # deshabilitados: todavía nadie edita sucursales desde la app.
+        # Se empaquetan ANTES que el Treeview (que se expande) para que su
         # lugar quede reservado siempre, sin importar la altura de ventana.
-        acciones = tk.Frame(self, bg=Colors.BG_MAIN, height=40)
+        acciones = tk.Frame(self, bg=Colors.BG_MAIN)
         acciones.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
-        acciones.pack_propagate(False)
+
+        tk.Button(
+            acciones,
+            text="Eliminar",
+            font=Fonts.BUTTON,
+            bg=Colors.BTN_DANGER,
+            fg=Colors.TEXT_LIGHT,
+            relief="flat",
+            width=Sizes.BOTON_ACCION,
+            state="disabled",
+        ).pack(side="right", padx=(5, 0))
+
+        tk.Button(
+            acciones,
+            text="Editar",
+            font=Fonts.BUTTON,
+            bg=Colors.BTN_PRIMARY,
+            fg=Colors.TEXT_LIGHT,
+            relief="flat",
+            width=Sizes.BOTON_ACCION,
+            state="disabled",
+        ).pack(side="right", padx=(5, 0))
+
+        tk.Button(
+            acciones,
+            text="Nueva sucursal",
+            font=Fonts.BUTTON,
+            bg=Colors.BTN_PRIMARY,
+            fg=Colors.TEXT_LIGHT,
+            relief="flat",
+            width=Sizes.BOTON_ACCION,
+            state="disabled",
+        ).pack(side="right", padx=(5, 0))
 
         self._tree = ttk.Treeview(self, columns=_COLUMNAS, show="headings", selectmode="browse")
         for columna in _COLUMNAS:

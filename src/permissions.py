@@ -7,15 +7,6 @@ def puede_gestionar_usuarios(role):
     return role in _GESTIONAN_USUARIOS
 
 
-def puede_cambiar_alguna_password(role):
-    """True si ese rol puede cambiar la contrasena de alguien (aunque sea la propia).
-
-    Vendedor no usa password (entra solo con su usuario), asi que no hay
-    nada que cambiar ni como actor ni como objetivo.
-    """
-    return role != "Vendedor"
-
-
 def puede_cambiar_password(actor_role, target_role, es_uno_mismo):
     """Jerarquia: Admin > Supervisor. Vendedor no tiene password.
 

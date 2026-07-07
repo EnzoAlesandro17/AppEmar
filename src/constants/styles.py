@@ -18,3 +18,8 @@ class Fonts:
     SUBTITLE = ("Arial", 14)
     BODY = ("Arial", 11)
     BUTTON = ("Arial", 10, "bold")
+
+class Sizes:
+    # Ancho estándar (en caracteres) de los botones de acción de un CRUD,
+    # para que se vean parejos entre módulos.
+    BOTON_ACCION = 18

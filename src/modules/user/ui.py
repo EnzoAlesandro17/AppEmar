@@ -2,18 +2,12 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from src import session
-from src.constants.styles import Colors, Fonts
+from src.constants.styles import Colors, Fonts, Sizes
 from src.modules.branches.logic import listar_sucursales
 from src.modules.user.logic import borrar_usuario, listar_usuarios, obtener_por_id
 from src.modules.user.password_dialog import CambiarContrasenaDialog
 from src.modules.user.user_form_dialog import UsuarioFormDialog
-from src.permissions import (
-    puede_cambiar_alguna_password,
-    puede_cambiar_password,
-    puede_gestionar_usuarios,
-)
-
-_ANCHO_BOTON_ACCION = 18
+from src.permissions import puede_cambiar_password, puede_gestionar_usuarios
 
 _COLUMNAS = ("code", "name", "last_name", "dni", "username", "role", "branch")
 _ENCABEZADOS = {
@@ -35,10 +29,6 @@ class UsuariosFrame(tk.Frame):
         usuario_logueado = session.usuario_actual
         self._rol_actual = usuario_logueado["role"] if usuario_logueado else None
         self._usuarios_por_item = {}
-
-        self._btn_editar = None
-        self._btn_eliminar = None
-        self._btn_password = None
 
         self._crear_layout()
         self._refrescar()
@@ -66,67 +56,69 @@ class UsuariosFrame(tk.Frame):
         self._tree.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self._tree.bind("<<TreeviewSelect>>", lambda _evento: self._actualizar_botones())
 
-        if puede_cambiar_alguna_password(self._rol_actual):
-            self._btn_password = tk.Button(
-                acciones,
-                text="Cambiar contraseña",
-                font=Fonts.BUTTON,
-                bg=Colors.BTN_PRIMARY,
-                fg=Colors.TEXT_LIGHT,
-                relief="flat",
-                width=_ANCHO_BOTON_ACCION,
-                command=self._cambiar_password,
-                state="disabled",
-            )
-            self._btn_password.pack(side="right", padx=(5, 0))
+        # Los 4 botones existen siempre, para que el lugar sea fijo
+        # independientemente del rol; se habilitan o no según permisos.
+        self._btn_password = tk.Button(
+            acciones,
+            text="Cambiar contraseña",
+            font=Fonts.BUTTON,
+            bg=Colors.BTN_PRIMARY,
+            fg=Colors.TEXT_LIGHT,
+            relief="flat",
+            width=Sizes.BOTON_ACCION,
+            command=self._cambiar_password,
+            state="disabled",
+        )
+        self._btn_password.pack(side="right", padx=(5, 0))
 
-        if puede_gestionar_usuarios(self._rol_actual):
-            self._btn_eliminar = tk.Button(
-                acciones,
-                text="Eliminar",
-                font=Fonts.BUTTON,
-                bg=Colors.BTN_DANGER,
-                fg=Colors.TEXT_LIGHT,
-                relief="flat",
-                width=_ANCHO_BOTON_ACCION,
-                command=self._eliminar,
-                state="disabled",
-            )
-            self._btn_eliminar.pack(side="right", padx=(5, 0))
+        self._btn_eliminar = tk.Button(
+            acciones,
+            text="Eliminar",
+            font=Fonts.BUTTON,
+            bg=Colors.BTN_DANGER,
+            fg=Colors.TEXT_LIGHT,
+            relief="flat",
+            width=Sizes.BOTON_ACCION,
+            command=self._eliminar,
+            state="disabled",
+        )
+        self._btn_eliminar.pack(side="right", padx=(5, 0))
 
-            self._btn_editar = tk.Button(
-                acciones,
-                text="Editar",
-                font=Fonts.BUTTON,
-                bg=Colors.BTN_PRIMARY,
-                fg=Colors.TEXT_LIGHT,
-                relief="flat",
-                width=_ANCHO_BOTON_ACCION,
-                command=self._editar,
-                state="disabled",
-            )
-            self._btn_editar.pack(side="right", padx=(5, 0))
+        self._btn_editar = tk.Button(
+            acciones,
+            text="Editar",
+            font=Fonts.BUTTON,
+            bg=Colors.BTN_PRIMARY,
+            fg=Colors.TEXT_LIGHT,
+            relief="flat",
+            width=Sizes.BOTON_ACCION,
+            command=self._editar,
+            state="disabled",
+        )
+        self._btn_editar.pack(side="right", padx=(5, 0))
 
-            tk.Button(
-                acciones,
-                text="Nuevo usuario",
-                font=Fonts.BUTTON,
-                bg=Colors.BTN_PRIMARY,
-                fg=Colors.TEXT_LIGHT,
-                relief="flat",
-                width=_ANCHO_BOTON_ACCION,
-                command=self._nuevo,
-            ).pack(side="right", padx=(5, 0))
+        self._btn_nuevo = tk.Button(
+            acciones,
+            text="Nuevo usuario",
+            font=Fonts.BUTTON,
+            bg=Colors.BTN_PRIMARY,
+            fg=Colors.TEXT_LIGHT,
+            relief="flat",
+            width=Sizes.BOTON_ACCION,
+            command=self._nuevo,
+            state="normal" if puede_gestionar_usuarios(self._rol_actual) else "disabled",
+        )
+        self._btn_nuevo.pack(side="right", padx=(5, 0))
 
     def _actualizar_botones(self):
         id_usuario = self._id_seleccionado()
-        estado_gestion = "normal" if id_usuario is not None else "disabled"
-        for boton in (self._btn_editar, self._btn_eliminar):
-            if boton is not None:
-                boton.configure(state=estado_gestion)
-
-        if self._btn_password is not None:
-            self._btn_password.configure(state=self._estado_password(id_usuario))
+        estado_gestion = (
+            "normal" if puede_gestionar_usuarios(self._rol_actual) and id_usuario is not None
+            else "disabled"
+        )
+        self._btn_editar.configure(state=estado_gestion)
+        self._btn_eliminar.configure(state=estado_gestion)
+        self._btn_password.configure(state=self._estado_password(id_usuario))
 
     def _estado_password(self, id_usuario):
         if id_usuario is None:
