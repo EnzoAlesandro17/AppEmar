@@ -23,7 +23,7 @@ def inicializar_db():
 
 
 class App(tk.Tk):
-    """Ventana principal: sidebar de navegación + área de contenido intercambiable.
+    """Ventana principal: barra de módulos arriba + área de contenido intercambiable.
 
     Para sumar un módulo nuevo alcanza con agregarlo a MODULOS: la clase debe
     ser un tk.Frame que reciba el contenedor como único argumento.
@@ -39,12 +39,21 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(Settings.APP_NAME)
-        self.geometry(Settings.WINDOW_SIZE)
-        self.minsize(Settings.MIN_WIDTH, Settings.MIN_HEIGHT)
+        self._centrar_ventana(Settings.WINDOW_WIDTH, Settings.WINDOW_HEIGHT)
+        self.resizable(False, False)
+        # Sin esto, Tk recalcula el tamaño de la ventana al tamaño "pedido"
+        # por el contenido cada vez que se cambia de frame (login, módulos),
+        # ignorando el geometry fijo de arriba.
+        self.pack_propagate(False)
         self.configure(bg=Colors.BG_MAIN)
 
         self._frame_actual = None
         self._mostrar_login()
+
+    def _centrar_ventana(self, ancho, alto):
+        x = (self.winfo_screenwidth() - ancho) // 2
+        y = (self.winfo_screenheight() - alto) // 2
+        self.geometry(f"{ancho}x{alto}+{x}+{y}")
 
     def _mostrar_login(self):
         self._frame_actual = LoginFrame(self, on_exito=self._on_login_exitoso)
@@ -57,43 +66,51 @@ class App(tk.Tk):
         self.mostrar_modulo(next(iter(self.MODULOS)))
 
     def _crear_layout(self):
-        sidebar = tk.Frame(self, bg=Colors.BG_SIDEBAR, width=180)
-        sidebar.pack(side="left", fill="y")
-
-        tk.Label(
-            sidebar,
-            text=Settings.APP_NAME,
-            bg=Colors.BG_SIDEBAR,
-            fg=Colors.TEXT_LIGHT,
-            font=Fonts.TITLE,
-            wraplength=160,
-            justify="left",
-        ).pack(pady=20, padx=10)
+        barra = tk.Frame(self, bg=Colors.BG_SIDEBAR)
+        barra.pack(side="top", fill="x")
 
         usuario = session.usuario_actual
         tk.Label(
-            sidebar,
-            text=f"Hola, {usuario['name']} ({usuario['role']})",
+            barra,
+            text=f"{Settings.APP_NAME} — Hola, {usuario['name']} ({usuario['role']})",
             bg=Colors.BG_SIDEBAR,
             fg=Colors.TEXT_LIGHT,
-            font=Fonts.BODY,
-            wraplength=160,
-            justify="left",
-        ).pack(pady=(0, 20), padx=10)
+            font=Fonts.TITLE,
+        ).pack(side="top", anchor="w", padx=10, pady=(10, 5))
 
-        for nombre in self.MODULOS:
+        botones = tk.Frame(barra, bg=Colors.BG_SIDEBAR)
+        botones.pack(side="top", fill="x", padx=10, pady=(0, 10))
+
+        for columna, nombre in enumerate(self.MODULOS):
+            botones.grid_columnconfigure(columna, weight=1, uniform="modulos")
             tk.Button(
-                sidebar,
+                botones,
                 text=nombre,
                 font=Fonts.BUTTON,
                 bg=Colors.BTN_PRIMARY,
                 fg=Colors.TEXT_LIGHT,
                 relief="flat",
                 command=lambda n=nombre: self.mostrar_modulo(n),
-            ).pack(fill="x", padx=10, pady=5)
+            ).grid(row=0, column=columna, sticky="ew", padx=5)
+
+        # Fila reservada para futuros accesos rápidos (todavía sin funcionalidad).
+        reservados = tk.Frame(barra, bg=Colors.BG_SIDEBAR)
+        reservados.pack(side="top", fill="x", padx=10, pady=(0, 10))
+
+        for columna in range(4):
+            reservados.grid_columnconfigure(columna, weight=1, uniform="reservados")
+            tk.Button(
+                reservados,
+                text=str(columna + 1),
+                font=Fonts.BUTTON,
+                bg=Colors.BTN_PRIMARY,
+                fg=Colors.TEXT_LIGHT,
+                relief="flat",
+                state="disabled",
+            ).grid(row=0, column=columna, sticky="ew", padx=5)
 
         self.contenedor = tk.Frame(self, bg=Colors.BG_MAIN)
-        self.contenedor.pack(side="right", fill="both", expand=True)
+        self.contenedor.pack(side="top", fill="both", expand=True)
 
     def mostrar_modulo(self, nombre):
         if self._frame_actual is not None:

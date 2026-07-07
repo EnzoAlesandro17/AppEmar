@@ -28,6 +28,14 @@ class SucursalesFrame(tk.Frame):
             self, text="Sucursales", font=Fonts.SUBTITLE, bg=Colors.BG_MAIN, fg=Colors.TEXT_DARK
         ).pack(anchor="w", padx=10, pady=10)
 
+        # Fila reservada en el mismo lugar fijo que van a ocupar los botones
+        # de acción en Usuarios, para el día que Sucursales tenga alta/edición.
+        # Se empaqueta ANTES que el Treeview (que se expande) para que su
+        # lugar quede reservado siempre, sin importar la altura de ventana.
+        acciones = tk.Frame(self, bg=Colors.BG_MAIN, height=40)
+        acciones.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
+        acciones.pack_propagate(False)
+
         self._tree = ttk.Treeview(self, columns=_COLUMNAS, show="headings", selectmode="browse")
         for columna in _COLUMNAS:
             self._tree.heading(columna, text=_ENCABEZADOS[columna])

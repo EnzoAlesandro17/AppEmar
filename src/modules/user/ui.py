@@ -13,6 +13,8 @@ from src.permissions import (
     puede_gestionar_usuarios,
 )
 
+_ANCHO_BOTON_ACCION = 18
+
 _COLUMNAS = ("code", "name", "last_name", "dni", "username", "role", "branch")
 _ENCABEZADOS = {
     "code": "Código",
@@ -49,16 +51,13 @@ class UsuariosFrame(tk.Frame):
             header, text="Usuarios", font=Fonts.SUBTITLE, bg=Colors.BG_MAIN, fg=Colors.TEXT_DARK
         ).pack(side="left")
 
-        if puede_gestionar_usuarios(self._rol_actual):
-            tk.Button(
-                header,
-                text="Nuevo usuario",
-                font=Fonts.BUTTON,
-                bg=Colors.BTN_PRIMARY,
-                fg=Colors.TEXT_LIGHT,
-                relief="flat",
-                command=self._nuevo,
-            ).pack(side="right")
+        # Los botones de acción se empaquetan ANTES que el Treeview y con
+        # side="bottom", para reservar su lugar fijo abajo a la derecha.
+        # Si el Treeview (que se expande) se empaqueta primero, se come
+        # todo el espacio disponible y los botones quedan fuera de la
+        # ventana en resoluciones más chicas.
+        acciones = tk.Frame(self, bg=Colors.BG_MAIN)
+        acciones.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
 
         self._tree = ttk.Treeview(self, columns=_COLUMNAS, show="headings", selectmode="browse")
         for columna in _COLUMNAS:
@@ -66,34 +65,6 @@ class UsuariosFrame(tk.Frame):
             self._tree.column(columna, width=110)
         self._tree.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self._tree.bind("<<TreeviewSelect>>", lambda _evento: self._actualizar_botones())
-
-        acciones = tk.Frame(self, bg=Colors.BG_MAIN)
-        acciones.pack(fill="x", padx=10, pady=(0, 10))
-
-        if puede_gestionar_usuarios(self._rol_actual):
-            self._btn_editar = tk.Button(
-                acciones,
-                text="Editar",
-                font=Fonts.BUTTON,
-                bg=Colors.BTN_PRIMARY,
-                fg=Colors.TEXT_LIGHT,
-                relief="flat",
-                command=self._editar,
-                state="disabled",
-            )
-            self._btn_editar.pack(side="left", padx=(0, 5))
-
-            self._btn_eliminar = tk.Button(
-                acciones,
-                text="Eliminar",
-                font=Fonts.BUTTON,
-                bg=Colors.BTN_DANGER,
-                fg=Colors.TEXT_LIGHT,
-                relief="flat",
-                command=self._eliminar,
-                state="disabled",
-            )
-            self._btn_eliminar.pack(side="left", padx=(0, 5))
 
         if puede_cambiar_alguna_password(self._rol_actual):
             self._btn_password = tk.Button(
@@ -103,10 +74,49 @@ class UsuariosFrame(tk.Frame):
                 bg=Colors.BTN_PRIMARY,
                 fg=Colors.TEXT_LIGHT,
                 relief="flat",
+                width=_ANCHO_BOTON_ACCION,
                 command=self._cambiar_password,
                 state="disabled",
             )
-            self._btn_password.pack(side="left")
+            self._btn_password.pack(side="right", padx=(5, 0))
+
+        if puede_gestionar_usuarios(self._rol_actual):
+            self._btn_eliminar = tk.Button(
+                acciones,
+                text="Eliminar",
+                font=Fonts.BUTTON,
+                bg=Colors.BTN_DANGER,
+                fg=Colors.TEXT_LIGHT,
+                relief="flat",
+                width=_ANCHO_BOTON_ACCION,
+                command=self._eliminar,
+                state="disabled",
+            )
+            self._btn_eliminar.pack(side="right", padx=(5, 0))
+
+            self._btn_editar = tk.Button(
+                acciones,
+                text="Editar",
+                font=Fonts.BUTTON,
+                bg=Colors.BTN_PRIMARY,
+                fg=Colors.TEXT_LIGHT,
+                relief="flat",
+                width=_ANCHO_BOTON_ACCION,
+                command=self._editar,
+                state="disabled",
+            )
+            self._btn_editar.pack(side="right", padx=(5, 0))
+
+            tk.Button(
+                acciones,
+                text="Nuevo usuario",
+                font=Fonts.BUTTON,
+                bg=Colors.BTN_PRIMARY,
+                fg=Colors.TEXT_LIGHT,
+                relief="flat",
+                width=_ANCHO_BOTON_ACCION,
+                command=self._nuevo,
+            ).pack(side="right", padx=(5, 0))
 
     def _actualizar_botones(self):
         id_usuario = self._id_seleccionado()
