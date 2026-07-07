@@ -3,8 +3,8 @@ from tkinter import messagebox, ttk
 
 from src.constants.styles import Colors, Fonts
 from src.exceptions import ValidationError
-from src.modules.branches.logic import listar_sucursales
-from src.modules.user.logic import ROLES, actualizar_usuario, crear_usuario
+from src.modules.administrar.branches.logic import listar_sucursales
+from src.modules.administrar.user.logic import ROLES, actualizar_usuario, crear_usuario
 
 _SIN_SUCURSAL = "(sin sucursal)"
 

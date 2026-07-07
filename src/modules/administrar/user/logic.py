@@ -12,8 +12,8 @@ from src.constants.validations import (
 )
 from src.db.connection import obtener_conexion
 from src.exceptions import ValidationError
-from src.modules.branches.logic import obtener_por_id as obtener_sucursal_por_id
-from src.modules.user.db import TABLA
+from src.modules.administrar.branches.logic import obtener_por_id as obtener_sucursal_por_id
+from src.modules.administrar.user.db import TABLA
 
 _ITERACIONES_HASH = 100_000
 

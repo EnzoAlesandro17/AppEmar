@@ -3,15 +3,13 @@ import tkinter as tk
 from src import session
 from src.constants.settings import Settings
 from src.constants.styles import Colors, Fonts
-from src.modules.branches.db import crear_tabla as crear_tabla_branches
-from src.modules.branches.ui import SucursalesFrame
-from src.modules.clients.db import crear_tabla as crear_tabla_clients
-from src.modules.clients.ui import ClientesFrame
-from src.modules.products.db import crear_tabla as crear_tabla_products
-from src.modules.products.ui import ProductosFrame
-from src.modules.user.db import crear_tabla as crear_tabla_users
-from src.modules.user.login_ui import LoginFrame
-from src.modules.user.ui import UsuariosFrame
+from src.modules.administrar.branches.db import crear_tabla as crear_tabla_branches
+from src.modules.administrar.clients.db import crear_tabla as crear_tabla_clients
+from src.modules.administrar.products.db import crear_tabla as crear_tabla_products
+from src.modules.administrar.ui import AdministrarFrame
+from src.modules.administrar.user.db import crear_tabla as crear_tabla_users
+from src.modules.administrar.user.login_ui import LoginFrame
+from src.ui_nav import crear_grid_botones
 
 
 def inicializar_db():
@@ -23,18 +21,11 @@ def inicializar_db():
 
 
 class App(tk.Tk):
-    """Ventana principal: barra de módulos arriba + área de contenido intercambiable.
+    """Ventana principal: barra de secciones arriba + área de contenido intercambiable.
 
-    Para sumar un módulo nuevo alcanza con agregarlo a MODULOS: la clase debe
-    ser un tk.Frame que reciba el contenedor como único argumento.
+    Hoy solo "Administrar" está activo; el resto de la grilla queda
+    deshabilitado, reservado para futuras secciones (ventas, etc.).
     """
-
-    MODULOS = {
-        "Clientes": ClientesFrame,
-        "Productos": ProductosFrame,
-        "Usuarios": UsuariosFrame,
-        "Sucursales": SucursalesFrame,
-    }
 
     def __init__(self):
         super().__init__()
@@ -63,7 +54,7 @@ class App(tk.Tk):
         self._frame_actual.destroy()
         self._frame_actual = None
         self._crear_layout()
-        self.mostrar_modulo(next(iter(self.MODULOS)))
+        self._abrir_administrar()
 
     def _crear_layout(self):
         barra = tk.Frame(self, bg=Colors.BG_SIDEBAR)
@@ -78,46 +69,20 @@ class App(tk.Tk):
             font=Fonts.TITLE,
         ).pack(side="top", anchor="w", padx=10, pady=(10, 5))
 
-        botones = tk.Frame(barra, bg=Colors.BG_SIDEBAR)
-        botones.pack(side="top", fill="x", padx=10, pady=(0, 10))
-
-        for columna, nombre in enumerate(self.MODULOS):
-            botones.grid_columnconfigure(columna, weight=1, uniform="modulos")
-            tk.Button(
-                botones,
-                text=nombre,
-                font=Fonts.BUTTON,
-                bg=Colors.BTN_PRIMARY,
-                fg=Colors.TEXT_LIGHT,
-                relief="flat",
-                command=lambda n=nombre: self.mostrar_modulo(n),
-            ).grid(row=0, column=columna, sticky="ew", padx=5)
-
-        # Fila reservada para futuros accesos rápidos (todavía sin funcionalidad).
-        reservados = tk.Frame(barra, bg=Colors.BG_SIDEBAR)
-        reservados.pack(side="top", fill="x", padx=10, pady=(0, 10))
-
-        for columna in range(4):
-            reservados.grid_columnconfigure(columna, weight=1, uniform="reservados")
-            tk.Button(
-                reservados,
-                text=str(columna + 1),
-                font=Fonts.BUTTON,
-                bg=Colors.BTN_PRIMARY,
-                fg=Colors.TEXT_LIGHT,
-                relief="flat",
-                state="disabled",
-            ).grid(row=0, column=columna, sticky="ew", padx=5)
+        # 8 lugares fijos (2 filas de 4): solo "Administrar" está activo hoy,
+        # el resto queda reservado para futuras secciones (ventas, etc.).
+        secciones = [("Administrar", self._abrir_administrar)]
+        secciones += [(str(n), None) for n in range(2, 9)]
+        grilla = crear_grid_botones(barra, secciones)
+        grilla.pack(side="top", fill="x", padx=10, pady=(0, 10))
 
         self.contenedor = tk.Frame(self, bg=Colors.BG_MAIN)
         self.contenedor.pack(side="top", fill="both", expand=True)
 
-    def mostrar_modulo(self, nombre):
+    def _abrir_administrar(self):
         if self._frame_actual is not None:
             self._frame_actual.destroy()
-
-        clase_frame = self.MODULOS[nombre]
-        self._frame_actual = clase_frame(self.contenedor)
+        self._frame_actual = AdministrarFrame(self.contenedor)
         self._frame_actual.pack(fill="both", expand=True)
 
 

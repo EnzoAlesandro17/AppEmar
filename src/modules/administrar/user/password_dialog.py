@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from src.constants.styles import Colors, Fonts
 from src.exceptions import ValidationError
-from src.modules.user.logic import actualizar_usuario
+from src.modules.administrar.user.logic import actualizar_usuario
 
 
 class CambiarContrasenaDialog(tk.Toplevel):

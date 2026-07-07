@@ -3,7 +3,7 @@ import sqlite3
 from src.constants.validations import validar_campos_obligatorios, validar_email, validar_telefono
 from src.db.connection import obtener_conexion
 from src.exceptions import ValidationError
-from src.modules.branches.db import TABLA
+from src.modules.administrar.branches.db import TABLA
 
 
 def _validar_datos(name, email, phone):

@@ -3,7 +3,7 @@ import sqlite3
 from src.constants.validations import validar_campos_obligatorios
 from src.db.connection import obtener_conexion
 from src.exceptions import ValidationError
-from src.modules.products.db import TABLA
+from src.modules.administrar.products.db import TABLA
 
 
 def _validar_stock(stock):

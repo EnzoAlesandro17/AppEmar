@@ -9,7 +9,7 @@ from src.constants.validations import (
 )
 from src.db.connection import obtener_conexion
 from src.exceptions import ValidationError
-from src.modules.clients.db import TABLA
+from src.modules.administrar.clients.db import TABLA
 
 
 def _validar_datos(name, last_name, dni_cuit, phone, email):

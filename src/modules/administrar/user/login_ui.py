@@ -5,7 +5,7 @@ from src import session
 from src.constants.settings import Settings
 from src.constants.styles import Colors, Fonts
 from src.exceptions import ValidationError
-from src.modules.user.logic import iniciar_sesion
+from src.modules.administrar.user.logic import iniciar_sesion
 
 
 class LoginFrame(tk.Frame):
