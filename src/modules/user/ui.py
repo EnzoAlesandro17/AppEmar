@@ -6,7 +6,11 @@ from src.constants.styles import Colors, Fonts
 from src.modules.user.logic import borrar_usuario, listar_usuarios, obtener_por_id
 from src.modules.user.password_dialog import CambiarContrasenaDialog
 from src.modules.user.user_form_dialog import UsuarioFormDialog
-from src.permissions import puede_cambiar_contrasenas, puede_gestionar_usuarios
+from src.permissions import (
+    puede_cambiar_alguna_password,
+    puede_cambiar_password,
+    puede_gestionar_usuarios,
+)
 
 _COLUMNAS = ("code", "name", "last_name", "dni", "username", "role")
 _ENCABEZADOS = {
@@ -89,7 +93,7 @@ class UsuariosFrame(tk.Frame):
             )
             self._btn_eliminar.pack(side="left", padx=(0, 5))
 
-        if puede_cambiar_contrasenas(self._rol_actual):
+        if puede_cambiar_alguna_password(self._rol_actual):
             self._btn_password = tk.Button(
                 acciones,
                 text="Cambiar contraseña",
@@ -103,10 +107,23 @@ class UsuariosFrame(tk.Frame):
             self._btn_password.pack(side="left")
 
     def _actualizar_botones(self):
-        estado = "normal" if self._tree.selection() else "disabled"
-        for boton in (self._btn_editar, self._btn_eliminar, self._btn_password):
+        id_usuario = self._id_seleccionado()
+        estado_gestion = "normal" if id_usuario is not None else "disabled"
+        for boton in (self._btn_editar, self._btn_eliminar):
             if boton is not None:
-                boton.configure(state=estado)
+                boton.configure(state=estado_gestion)
+
+        if self._btn_password is not None:
+            self._btn_password.configure(state=self._estado_password(id_usuario))
+
+    def _estado_password(self, id_usuario):
+        if id_usuario is None:
+            return "disabled"
+        objetivo = obtener_por_id(id_usuario)
+        usuario_logueado = session.usuario_actual
+        es_uno_mismo = usuario_logueado is not None and usuario_logueado["id"] == id_usuario
+        puede = puede_cambiar_password(self._rol_actual, objetivo["role"], es_uno_mismo)
+        return "normal" if puede else "disabled"
 
     def _refrescar(self):
         for item in self._tree.get_children():

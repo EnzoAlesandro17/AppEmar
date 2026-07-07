@@ -16,7 +16,7 @@ from src.modules.user.db import TABLA
 
 _ITERACIONES_HASH = 100_000
 
-ROLES = ("Admin", "Gerente", "Vendedor", "Invitado")
+ROLES = ("Admin", "Supervisor", "Vendedor", "Invitado")
 
 
 def _hashear_contrasena(contrasena):
@@ -39,7 +39,10 @@ def _validar_datos(name, last_name, dni, username, password, email, birth_date, 
     if role not in ROLES:
         raise ValidationError(f"El rol debe ser uno de: {', '.join(ROLES)}.")
 
-    if bool(username) != bool(password):
+    if role == "Invitado":
+        if password:
+            raise ValidationError("Los invitados no usan contraseña: entran solo con su usuario.")
+    elif bool(username) != bool(password):
         raise ValidationError("Usuario y contraseña deben cargarse juntos, o dejarse los dos vacíos.")
 
     if email:
@@ -186,15 +189,17 @@ def verificar_contrasena(username, password):
 def iniciar_sesion(username, password):
     """Valida credenciales de login. Devuelve la fila del usuario si son correctas.
 
+    Los Invitado entran solo con su usuario, sin contraseña.
     Mensaje de error genérico a propósito, para no filtrar si falló el
     usuario o la contraseña.
     """
     usuario = obtener_por_username(username)
-    if (
-        usuario is None
-        or usuario["status"] == 0
-        or usuario["password"] is None
-        or not _verificar_hash(password, usuario["password"])
-    ):
+    if usuario is None or usuario["status"] == 0:
+        raise ValidationError("Usuario o contraseña incorrectos.")
+
+    if usuario["role"] == "Invitado":
+        return usuario
+
+    if usuario["password"] is None or not _verificar_hash(password, usuario["password"]):
         raise ValidationError("Usuario o contraseña incorrectos.")
     return usuario
