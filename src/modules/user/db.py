@@ -19,6 +19,7 @@ def crear_tabla():
                 email TEXT,
                 birth_date TEXT,
                 phone TEXT,
+                role TEXT NOT NULL DEFAULT 'Vendedor',
                 status INTEGER NOT NULL DEFAULT 1
             )
             """

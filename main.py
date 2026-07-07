@@ -1,5 +1,6 @@
 import tkinter as tk
 
+from src import session
 from src.constants.settings import Settings
 from src.constants.styles import Colors, Fonts
 from src.modules.branches.db import crear_tabla as crear_tabla_branches
@@ -9,6 +10,7 @@ from src.modules.clients.ui import ClientesFrame
 from src.modules.products.db import crear_tabla as crear_tabla_products
 from src.modules.products.ui import ProductosFrame
 from src.modules.user.db import crear_tabla as crear_tabla_users
+from src.modules.user.login_ui import LoginFrame
 from src.modules.user.ui import UsuariosFrame
 
 
@@ -42,6 +44,15 @@ class App(tk.Tk):
         self.configure(bg=Colors.BG_MAIN)
 
         self._frame_actual = None
+        self._mostrar_login()
+
+    def _mostrar_login(self):
+        self._frame_actual = LoginFrame(self, on_exito=self._on_login_exitoso)
+        self._frame_actual.pack(fill="both", expand=True)
+
+    def _on_login_exitoso(self, usuario):
+        self._frame_actual.destroy()
+        self._frame_actual = None
         self._crear_layout()
         self.mostrar_modulo(next(iter(self.MODULOS)))
 
@@ -58,6 +69,17 @@ class App(tk.Tk):
             wraplength=160,
             justify="left",
         ).pack(pady=20, padx=10)
+
+        usuario = session.usuario_actual
+        tk.Label(
+            sidebar,
+            text=f"Hola, {usuario['name']} ({usuario['role']})",
+            bg=Colors.BG_SIDEBAR,
+            fg=Colors.TEXT_LIGHT,
+            font=Fonts.BODY,
+            wraplength=160,
+            justify="left",
+        ).pack(pady=(0, 20), padx=10)
 
         for nombre in self.MODULOS:
             tk.Button(

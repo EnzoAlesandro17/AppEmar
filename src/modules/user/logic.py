@@ -16,6 +16,8 @@ from src.modules.user.db import TABLA
 
 _ITERACIONES_HASH = 100_000
 
+ROLES = ("Admin", "Gerente", "Vendedor", "Invitado")
+
 
 def _hashear_contrasena(contrasena):
     salt = os.urandom(16)
@@ -30,9 +32,12 @@ def _verificar_hash(contrasena, contrasena_guardada):
     return hash_bytes.hex() == hash_hex
 
 
-def _validar_datos(name, last_name, dni, username, password, email, birth_date, phone):
+def _validar_datos(name, last_name, dni, username, password, email, birth_date, phone, role):
     validar_campos_obligatorios({"name": name, "last_name": last_name, "dni": dni})
     validar_dni(dni)
+
+    if role not in ROLES:
+        raise ValidationError(f"El rol debe ser uno de: {', '.join(ROLES)}.")
 
     if bool(username) != bool(password):
         raise ValidationError("Usuario y contraseña deben cargarse juntos, o dejarse los dos vacíos.")
@@ -61,9 +66,11 @@ def _traducir_error_integridad(error):
 
 
 def crear_usuario(name, last_name, dni, code=None, username=None, password=None,
-                   email=None, birth_date=None, phone=None):
+                   email=None, birth_date=None, phone=None, role="Vendedor"):
     """Valida y crea un usuario nuevo. Devuelve el id generado."""
-    telefono_normalizado = _validar_datos(name, last_name, dni, username, password, email, birth_date, phone)
+    telefono_normalizado = _validar_datos(
+        name, last_name, dni, username, password, email, birth_date, phone, role
+    )
 
     contrasena_hasheada = _hashear_contrasena(password) if password else None
 
@@ -72,11 +79,11 @@ def crear_usuario(name, last_name, dni, code=None, username=None, password=None,
             cursor = conexion.execute(
                 f"""
                 INSERT INTO {TABLA}
-                    (code, name, last_name, dni, username, password, email, birth_date, phone)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (code, name, last_name, dni, username, password, email, birth_date, phone, role)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (code, name, last_name, dni, username, contrasena_hasheada, email, birth_date,
-                 telefono_normalizado),
+                 telefono_normalizado, role),
             )
             conexion.commit()
             return cursor.lastrowid
@@ -107,7 +114,8 @@ def listar_usuarios(incluir_borrados=False):
 
 
 def actualizar_usuario(id_usuario, name=None, last_name=None, dni=None, code=None,
-                        username=None, password=None, email=None, birth_date=None, phone=None):
+                        username=None, password=None, email=None, birth_date=None, phone=None,
+                        role=None):
     """Actualiza los campos recibidos; los que se pasan en None mantienen su valor actual."""
     usuario_actual = obtener_por_id(id_usuario)
     if usuario_actual is None:
@@ -122,12 +130,13 @@ def actualizar_usuario(id_usuario, name=None, last_name=None, dni=None, code=Non
         "email": email if email is not None else usuario_actual["email"],
         "birth_date": birth_date if birth_date is not None else usuario_actual["birth_date"],
         "phone": phone if phone is not None else usuario_actual["phone"],
+        "role": role if role is not None else usuario_actual["role"],
     }
     password_efectivo = password if password is not None else usuario_actual["password"]
 
     telefono_normalizado = _validar_datos(
         nuevos["name"], nuevos["last_name"], nuevos["dni"], nuevos["username"],
-        password_efectivo, nuevos["email"], nuevos["birth_date"], nuevos["phone"],
+        password_efectivo, nuevos["email"], nuevos["birth_date"], nuevos["phone"], nuevos["role"],
     )
 
     contrasena_hasheada = _hashear_contrasena(password) if password else usuario_actual["password"]
@@ -138,13 +147,13 @@ def actualizar_usuario(id_usuario, name=None, last_name=None, dni=None, code=Non
                 f"""
                 UPDATE {TABLA}
                 SET code = ?, name = ?, last_name = ?, dni = ?, username = ?,
-                    password = ?, email = ?, birth_date = ?, phone = ?
+                    password = ?, email = ?, birth_date = ?, phone = ?, role = ?
                 WHERE id = ?
                 """,
                 (
                     nuevos["code"], nuevos["name"], nuevos["last_name"], nuevos["dni"],
                     nuevos["username"], contrasena_hasheada, nuevos["email"],
-                    nuevos["birth_date"], telefono_normalizado, id_usuario,
+                    nuevos["birth_date"], telefono_normalizado, nuevos["role"], id_usuario,
                 ),
             )
             conexion.commit()
@@ -172,3 +181,20 @@ def verificar_contrasena(username, password):
     if usuario is None or usuario["password"] is None:
         return False
     return _verificar_hash(password, usuario["password"])
+
+
+def iniciar_sesion(username, password):
+    """Valida credenciales de login. Devuelve la fila del usuario si son correctas.
+
+    Mensaje de error genérico a propósito, para no filtrar si falló el
+    usuario o la contraseña.
+    """
+    usuario = obtener_por_username(username)
+    if (
+        usuario is None
+        or usuario["status"] == 0
+        or usuario["password"] is None
+        or not _verificar_hash(password, usuario["password"])
+    ):
+        raise ValidationError("Usuario o contraseña incorrectos.")
+    return usuario
