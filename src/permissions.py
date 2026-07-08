@@ -1,10 +1,11 @@
 """Reglas de que rol puede hacer que accion, centralizadas para reusar entre modulos."""
 
-_GESTIONAN_USUARIOS = ("Admin", "Supervisor")
+_GESTIONAN_REGISTROS = ("Admin", "Supervisor")
 
 
-def puede_gestionar_usuarios(role):
-    return role in _GESTIONAN_USUARIOS
+def puede_gestionar_registros(role):
+    """Gate genérico de alta/edición/baja, compartido por usuarios/clientes/productos."""
+    return role in _GESTIONAN_REGISTROS
 
 
 def puede_cambiar_password(actor_role, target_role, es_uno_mismo):

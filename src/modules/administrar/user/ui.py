@@ -7,7 +7,7 @@ from src.modules.administrar.listado_frame import ListadoFrame
 from src.modules.administrar.user.logic import borrar_usuario, listar_usuarios, obtener_por_id
 from src.modules.administrar.user.password_dialog import CambiarContrasenaDialog
 from src.modules.administrar.user.user_form_dialog import UsuarioFormDialog
-from src.permissions import puede_cambiar_password, puede_gestionar_usuarios
+from src.permissions import puede_cambiar_password, puede_gestionar_registros
 
 
 class UsuariosFrame(ListadoFrame):
@@ -42,7 +42,7 @@ class UsuariosFrame(ListadoFrame):
 
     def actualizar_botones(self):
         id_usuario = self.id_seleccionado()
-        gestion_ok = puede_gestionar_usuarios(self._rol_actual)
+        gestion_ok = puede_gestionar_registros(self._rol_actual)
         estado_gestion = "normal" if gestion_ok and id_usuario is not None else "disabled"
 
         self.boton("nuevo").configure(state="normal" if gestion_ok else "disabled")
