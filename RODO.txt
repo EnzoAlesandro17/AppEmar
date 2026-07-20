@@ -1,158 +1,137 @@
 RODO - notas personales sobre AppEmar
 =====================================
-Rodo comenzó como un error de tipeo de TO-DO Lists. Hoy, es parte esencial de
-mis proyectos. Si bien todos conocemos el clásico README, como humanos siempre
-necesitamos un espacio donde ser nosotros mismos y plasmar nuestras ideas. Rodo
-es eso y mucho más para mí
-
-Esta app está hecha con el propósito de aprender a programar y resolver problemas
-nuevos a soluciones viejas. Lo viejo funciona, pero también se puede automatizar
-
-"Tal vez no sepa dónde quiero estar, pero sí sé qué camino seguir. Estar mejor que
-ayer y peor que mañana."
 
 
-QUÉ HICIMOS
------------
-- Migramos el main.py viejo (Tkinter + Excel/xlwings, la "CAJA") a una
-  arquitectura modular: cada área (users, clients, products, branches) tiene
-  su propio db.py / logic.py / ui.py, todos compartiendo la misma DB SQLite.
-- Conexión centralizada en src/db/connection.py (GestorDB.conectar() +
-  obtener_conexion() como context manager, con foreign_keys ON).
-- Esquema de las 4 tablas, todas con columna status (1 = activo, 0 = borrado
-  lógico) para no perder datos con un DELETE real.
-- CRUD completo + validaciones de negocio en los 4 módulos, con las
-  validaciones genéricas (email, teléfono, DNI, CUIT, fecha/edad mínima,
-  campos obligatorios) centralizadas en src/constants/validations.py para
-  no duplicarlas módulo por módulo.
-- Contraseñas de usuario hasheadas con pbkdf2_hmac + salt (nunca texto plano).
-- products: precio mayorista/minorista con validación cruzada, y stock que
-  puede ser NULL para productos sin inventario físico (ej: E-SIM).
-- main.py ahora crea las tablas solo al arrancar (inicializar_db) y muestra
-  un sidebar con los 4 módulos (por ahora con UI placeholder, "en
-  construcción").
-- De paso resolvimos cosas del entorno: tkinter roto en el sandbox de VS Code
-  Flatpak, tamaño de ventana (900x500), requirements.txt corrupto en UTF-16
-  con dependencias viejas de Excel, y código muerto en config.py.
-- (Update) El encoding de requirements.txt en realidad seguía en UTF-16LE
-  pese a lo anotado arriba (rompía pip install -r requirements.txt con
-  UnicodeDecodeError) — ahora sí quedó en UTF-8 de verdad, verificado
-  corriendo pip install.
-- users gana columna role (Admin / Gerente / Vendedor / Invitado),
-  validada en crear_/actualizar_usuario. Por ahora el rol se guarda y se
-  muestra, no restringe todavía qué módulos ve cada uno.
-- Login real: pantalla LoginFrame (src/modules/user/login_ui.py) usando
-  iniciar_sesion() (nueva, con mensaje de error genérico para no filtrar
-  si falló el usuario o la contraseña), conectada por primera vez a un
-  messagebox de error — hasta ahora ninguna pantalla atrapaba
-  ValidationError. Se bloquea el formulario a los MAX_LOGIN_ATTEMPTS (3)
-  intentos fallidos, constante que ya estaba definida y sin usar.
-  main.py arranca en el login en vez del sidebar directo.
-- src/session.py: módulo chico que guarda el usuario logueado en memoria
-  para que cualquier pantalla futura lo pueda consultar sin pasarlo a
-  mano por todos los frames.
-- Primera UI de CRUD real del proyecto: el módulo Usuarios dejó de ser un
-  placeholder. Treeview con la lista, y diálogos separados para
-  alta/edición (UsuarioFormDialog, con combobox de rol) y cambio de
-  contraseña (CambiarContrasenaDialog). Va a servir de molde para cuando
-  se hagan las UI de clients/products/branches.
-- src/permissions.py: primer lugar centralizado para reglas de "qué rol
-  puede hacer qué" (puede_gestionar_usuarios, puede_cambiar_contrasenas),
-  mismo espíritu que validations.py — se arma la primera vez que hace
-  falta, no cuando ya se repitió en varios módulos.
-- Reglas de permisos de Usuarios acordadas: crear/eliminar/editar datos
-  solo Admin y Gerente; cambiar contraseña (de cualquier usuario) también
-  lo puede hacer un Vendedor; Invitado ve la lista en solo lectura sin
-  ningún botón.
-- (Update) Gerente pasó a llamarse Supervisor en todos lados (ROLES,
-  UI). La regla de cambiar contraseñas se afinó a una jerarquía real en
-  vez de "Vendedor cambia cualquiera": Admin cambia la de cualquiera,
-  Supervisor la de cualquiera menos Admin, Vendedor solo la de otros
-  Vendedores, e Invitado no cambia ninguna. Además cualquiera (menos
-  Invitado) puede cambiar la propia sin depender de un superior. Y de
-  paso: Invitado ahora entra solo con su usuario, sin contraseña (no
-  puede tener password guardada — se valida en crear_usuario). La
-  jerarquía completa vive en src/permissions.py
-  (puede_cambiar_password).
-- (Update 2) El rol Invitado se eliminó del todo: Vendedor pasó a ser el
-  rol que entra sin contraseña (crear_usuario rechaza setearle una,
-  iniciar_sesion no la verifica). ROLES quedó en Admin/Supervisor/
-  Vendedor. La idea a futuro es que Admin/Supervisor puedan ir ganando
-  permisos que un Vendedor solo (sin login fuerte) no tenga.
-- users gana branch_id (FK a branches, nullable — Admin/Supervisor
-  pueden no tener sucursal asignada). Primera migración de esquema real
-  con ALTER TABLE ADD COLUMN en vez de borrar la DB de dev, porque ya
-  hay datos de prueba cargados a mano que valía la pena conservar.
-  Validado en user/logic.py (la sucursal tiene que existir y estar
-  activa). UsuarioFormDialog suma un combobox de sucursal, y el Treeview
-  de Usuarios muestra el nombre de la sucursal de cada uno.
-- branches deja de ser un placeholder: SucursalesFrame ahora es un
-  Treeview de solo lectura (sin botones de alta/edición/baja — por
-  ahora nadie edita sucursales desde la app).
+ESTRUCTURA DE CARPETAS
+------------------------
+AppEmar/
+├── RODO.txt
+├── readme.md
+├── requirements.txt
+├── main.py
+├── .gitignore
+├── data/                      # database.db local (ignorado por git)
+└── src/
+    ├── __init__.py
+    ├── app.py
+    ├── config.py
+    ├── session.py
+    ├── auth.py
+    ├── permissions.py
+    ├── exceptions.py
+    ├── constants/
+    │   ├── __init__.py
+    │   ├── settings.py
+    │   ├── validations.py
+    │   └── styles.py           # paleta + stylesheet Qt (QSS), ver ESTILOS abajo
+    ├── db/
+    │   ├── __init__.py
+    │   └── connection.py
+    ├── widgets/
+    │   ├── __init__.py
+    │   └── crud_list_widget.py  # CrudListWidget, ver ABSTRACCIÓN abajo
+    └── modules/
+        ├── __init__.py
+        ├── branches/
+        │   ├── __init__.py
+        │   ├── db.py
+        │   ├── logic.py
+        │   └── ui.py
+        ├── employees/
+        │   ├── __init__.py
+        │   ├── db.py
+        │   ├── logic.py
+        │   └── ui.py
+        └── users/
+            ├── __init__.py
+            ├── db.py
+            ├── logic.py
+            └── ui.py
 
 
-QUÉ SEGUIRÍA HACIENDO
-----------------------
-- Las UI reales de clients/products (hoy siguen siendo un Label "en
-  construcción") — calcar el patrón de Usuarios (Treeview + diálogos
-  separados de alta/edición) que ya quedó armado y probado. branches ya
-  tiene su Treeview, aunque de solo lectura.
-- Reactivar usuarios borrados desde la UI (reactivar_usuario ya existe en
-  logic.py, pero todavía no hay botón que lo use).
-- Si en algún momento hace falta, restringir acceso a módulos por role (hoy
-  el rol se guarda y se muestra pero no bloquea nada del sidebar).
-- Un módulo de ventas/movimientos que relacione clients + products + users +
-  branches. users ya tiene branch_id; falta el resto (client_id en una
-  venta, etc.) y la tabla de movimientos en sí — eso va a hacer falta en
-  cuanto haya que registrar una venta.
-- Tests automatizados (pytest) en vez de los scripts sueltos que fui corriendo
-  a mano en cada paso para probar cada módulo. Esos tests no quedaron guardados
-  en ningún lado del repo.
-- Migraciones de esquema reales (ALTER TABLE): ya arrancamos con esto para
-  branch_id en users (ver arriba). Falta el resto: hacer que sea la
-  costumbre para cualquier columna nueva de acá en más, en vez de borrar
-  la DB de dev.
-- Empaquetar la app para Windows (PyInstaller o similar), ya que el uso final
-  es en la compu del local.
-- Conectar ValidationError con messagebox en el resto de las pantallas (el
-  login y Usuarios ya lo hacen, pero clients/products siguen siendo
-  placeholders sin ningún manejo de errores todavía).
+GUI: TKINTER → PYSIDE6
+-----------------------
+Arrancó en Tkinter (sin dependencias externas). Se cambió a PySide6/Qt
+porque se ve mucho más nativo/prolijo de entrada, y porque su hoja de
+estilos (QSS) es casi CSS, lo que calza mejor con el design system que
+Tkinter/ttk. El cambio quedó contenido en la capa `ui.py` de cada módulo
+más `src/app.py` y `main.py` — `db.py`/`logic.py` no se tocaron, porque ya
+estaban separados de la interfaz.
+
+Costo real del cambio: deja de ser "sin dependencias externas", ahora
+`requirements.txt` pide `PySide6` (LGPL, gratis incluso para distribuir a
+otros locales — a diferencia de PyQt6, que es GPL/comercial).
+
+Convenciones nuevas por el cambio de framework:
+- Pantallas como QWidget, layouts con QVBoxLayout/QHBoxLayout (no más
+  pack/place).
+- Botones con `objectName` (primaryButton, secondaryButton) en vez de
+  `style=` de ttk, para que el QSS los tipee por selector de id.
+- MainWindow con QStackedWidget para alternar entre pantallas (login /
+  menú principal), reemplaza el manejo manual de frames de Tkinter.
 
 
-VISIÓN A FUTURO (todavía sin diseñar, solo para no perder la idea)
--------------------------------------------------------------------
-- Sucursales acotadas: cada usuario pertenece a una sola sucursal y
-  responde en nombre de ella — no debería poder declarar una venta a
-  nombre de otra sucursal.
-- Transferencias entre sucursales: sí se puede "mandar" efectivo o
-  producto a otra sucursal, pero no modificarla directamente. Esto es,
-  en esencia, un movimiento con origen/destino — va a salir naturalmente
-  del futuro módulo de ventas/movimientos, no conviene diseñarlo antes
-  y por separado.
-- Mensajería entre sucursales tipo "archivos cifrados": una sucursal (o
-  RR.HH. en general) manda un pedido de actualización o un asiento a
-  otra — ej. RR.HH. mandando una corrección de listas, o un Supervisor
-  mandando una conciliación o la aprobación de un asiento con
-  descuentos. Es una idea grande (workflow de aprobación + algo de
-  cifrado) que conviene diseñar junto con el módulo de ventas/
-  movimientos, cuando llegue el momento.
-- Posible 2FA (TOTP con pyotp) para el login de Admin/Supervisor más
-  adelante — técnicamente simple, la fricción real es operativa (cada
-  usuario necesita un authenticator y un plan para cuando pierda el
-  dispositivo). No condiciona el diseño de roles/sucursales de ahora.
+ESTILOS
+--------
+No se define paleta propia: se usa el design system interno (fuente de
+verdad, no se clona, solo se copia/adapta el archivo que corresponda).
+https://github.com/EnzoAlesandro17/design-system
+
+Ahí todavía no hay una versión para PySide, así que `src/constants/
+styles.py` arma el QSS a mano (función `build_stylesheet`), pero con los
+mismos valores hex que el resto del design system. Uso:
+
+    from src.constants.styles import build_stylesheet
+
+    ventana.setStyleSheet(build_stylesheet(dark=False))
+
+Cualquier ajuste de color se decide primero en el repo del design system,
+no acá — este archivo solo lo traduce a QSS.
+
+La barra superior es la excepción: siempre usa el azul oscuro del modo
+claro (`HEADER_COLOR`, fijo), no cambia con el toggle de tema.
 
 
+MODELOS DE DATOS — branches / employees / users
+--------------------------------------------------
+Los tres módulos base ya tienen CRUD completo (listar, crear, editar,
+borrado lógico) con validaciones mínimas (campos obligatorios, formato de
+email, código único).
 
-COSAS BUENAS
-------------
-- La decisión de separar en db/logic/ui desde el arranque fue sólida — hizo
-  que cada módulo nuevo (branches, en particular) fuera calcar el patrón
-  anterior en vez de inventar de nuevo.
-- Fuiste vos quien pidió centralizar las validaciones compartidas en vez de
-  dejarlas duplicadas — ese es exactamente el tipo de intervención que
-  mantiene el código escalable a medida que se agregan módulos.
-- Pensaste en casos borde reales del negocio antes de que se conviertan en
-  bugs (E-SIM sin stock, DNI vs CUIT, precio mayorista/minorista) en vez de
-  descubrirlos después con datos reales cargados.
+- branches: id, code (único), name, address, street_number, email, city,
+  state, country, status.
+- employees: id, code (único), name, last_name, phone, email, branch_id
+  (FK a branches), status.
+- users: id, username (único), password (hasheada, pbkdf2_hmac), email,
+  role, employee_id (FK a employees, opcional), status.
+
+Dos cosas que sumé sobre lo pedido, para no perder decisiones ya tomadas
+antes en este mismo RODO:
+- `role` en users: no estaba en la lista de campos, pero sin esto se
+  pierde la distinción IT/Supervisor/Encargado/Vendedor ya definida más
+  arriba. Lista de roles centralizada en `Settings.ROLES`.
+- `status` en las tres tablas: borrado lógico, ya decidido en
+  DECISIONES DE ARQUITECTURA de la primera etapa.
+
+Pendiente, no bloqueante: permissions.py sigue vacío — con 3 módulos ya
+andando es buen momento para definir permiso fino por rol y acción.
 
 
+ABSTRACCIÓN: CrudListWidget
+------------------------------
+Sucursales/Empleados/Usuarios repetían la misma pantalla de listado
+(tabla + Agregar/Editar/Eliminar/Volver), solo cambiando columnas y el
+diálogo de formulario. Eso sí se extrajo a `src/widgets/
+crud_list_widget.py` (`CrudListWidget`), porque era mecánico de verdad —
+no había reglas de negocio escondidas en la duplicación.
+
+Cada módulo hereda y define: `titulo`, `columnas`, `listar()`,
+`fila_a_valores(fila)`, `abrir_dialogo(id_=None)` (devuelve el QDialog de
+alta/edición) y `eliminar(id_)`. El QDialog de cada módulo (con sus
+campos/combos propios) sigue siendo especifico — ahí sí hay diferencias
+reales entre módulos (validaciones, combos de FK, hash de contraseña en
+Usuarios) como para no forzar una abstracción.
+
+Agregar/Editar/Eliminar quedaron los tres abajo, con el mismo estilo
+(`secondaryButton`, el mismo que ya usaban Editar/Eliminar) — no hizo
+falta agregar nada nuevo a `styles.py` para esto.

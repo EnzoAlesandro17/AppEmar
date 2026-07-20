@@ -1,2 +1,3 @@
-# Sin dependencias externas por ahora: Tkinter y sqlite3 son parte de la
-# librería estándar de Python.
+PySide6
+
+# sqlite3 es parte de la librería estándar de Python, no hace falta listarla.

@@ -1,13 +1,17 @@
-"""Guarda el usuario logueado en memoria para toda la app."""
+"""Usuario logueado, guardado en memoria para que cualquier pantalla lo consulte."""
 
-usuario_actual = None
+_usuario_actual = None
 
 
 def iniciar(usuario):
-    global usuario_actual
-    usuario_actual = usuario
+    global _usuario_actual
+    _usuario_actual = usuario
 
 
 def cerrar():
-    global usuario_actual
-    usuario_actual = None
+    global _usuario_actual
+    _usuario_actual = None
+
+
+def obtener_usuario():
+    return _usuario_actual

@@ -1,2 +1,2 @@
 class ValidationError(Exception):
-    """Se lanza cuando los datos no cumplen las reglas de validación del negocio."""
+    """Error de validación de negocio, pensado para mostrarse tal cual en la UI."""
